@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Controllo AlphaBot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(1, 100px);
+            grid-template-rows: repeat(1, 100px);
+            gap: 5px;
+            margin-left: 105px;
+            margin-bottom: 5px;
+        }
+
+        .controls2 {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(1, 100px);
+            gap: 5px;
+        }
+        button {
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            background: #4CAF50;
+            color: white;
+            border: none;
+        }
+        .stop {
+            background: #f44336;
+        }
+        .status {
+            margin-top: 20px;
+        }
+        a {
+            margin-top: 20px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+<h1>AlphaBot Controller</h1>
+
+<div  >
+    <section class="controls">
+        <button data-key="W">W</button>
+    </section>
+    
+    <section class="controls2">
+        <button data-key="A">A</button>
+        <button data-key="S">S</button>
+        <button data-key="D">D</button>
+    </section>
+    
+</div>
+
+<div class="status" id="status">Pronto</div>
+<i>Inserisci l'istruzione (cerchio, triangolo, quadrato)</i>
+<input type="text" id="istr"></input>
+<input type="Button" value="Invia" id="invia">
+
+<a href="/logout">Logout</a>
+
+
+<script>
+    let currentKey = null;
+    const statusDiv = document.getElementById("status");
+    const invia = document.getElementById("invia");
+    const istr = document.getElementById("istr")
+
+    invia.addEventListener("click", e=>{
+        if(istr.value == "triangolo" || istr.value == "cerchio" || istr.value == "quadrato"){
+            sendCommand(istr.value);
+        }
+        else{
+            sendCommand("invalidCommand");
+        }
+        
+    })
+
+    function sendCommand(cmd) {
+        fetch("/move", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({command: cmd})
+        })
+        .then(r => r.json())
+        .then(d => statusDiv.textContent = "Azione: " + d.action)
+        .catch(() => statusDiv.textContent = "Errore");
+    }
+
+    document.addEventListener("keydown", e => {
+        const key = e.key.toUpperCase();
+        if (["W","A","S","D"].includes(key) && currentKey !== key) {
+            currentKey = key;
+            sendCommand(key);
+        }
+    });
+
+    document.addEventListener("keyup", e => {
+        if (["W","A","S","D"].includes(e.key.toUpperCase())) {
+            currentKey = null;
+            sendCommand("STOP");
+        }
+    });
+
+    document.querySelectorAll("button").forEach(btn => {
+        btn.onmousedown = () => {
+            currentKey = btn.dataset.key;
+            sendCommand(currentKey);
+        };
+        btn.onmouseup = () => sendCommand("STOP");
+        btn.onmouseleave = () => sendCommand("STOP");
+    });
+</script>
+
+</body>
+</html>
